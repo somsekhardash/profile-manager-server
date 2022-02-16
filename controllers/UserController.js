@@ -73,7 +73,7 @@ export const createUser = [
         );
       } else {
         const user = new User({
-          userName: req.body.userName,
+          userName: "test_user@condenast.com",
           status: "New"
         });
         user

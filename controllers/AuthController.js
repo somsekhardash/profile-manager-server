@@ -7,20 +7,26 @@ import {
   import expValidator from "express-validator";
   const { body, validationResult } = expValidator;
   import User from "../models/UserModel.js";
+  import {decodeCookie} from './../helpers/utility.js';
   import jsonwebtoken from "jsonwebtoken";
   const { sign } = jsonwebtoken;
   let refreshTokens = [];
   
   export const userLogin = [
-    body("userName")
+    body("cn_token")
       .isLength({ min: 1 })
       .trim()
-      .withMessage("userName must be specified."),
+      .withMessage("cn_token must be specified."),
+    body("pay_ent_pass")
+      .isLength({ min: 1 })
+      .trim()
+      .withMessage("pay_ent_pass must be specified."),
     (req, res) => {
       try {
         const errors = validationResult(req);
-        const { userName } = req.body;
-  
+        const { cn_token } = req.body;
+        const data = decodeCookie(cn_token);
+        console.log(data.email);
         if (!errors.isEmpty()) {
           return validationErrorWithData(
             res,
@@ -28,12 +34,12 @@ import {
             errors.array()
           );
         }
-        User.findOne({ userName: userName })
+        User.findOne({ email: data.email })
           .then((user) => {
             if (user) {
                 const userData = {
                   _id: user._id,
-                  userName: user.userName
+                  email: data.email
                 };
                 const jwtPayload = userData;
                 const jwtData = {
@@ -43,8 +49,7 @@ import {
                 return successResponseWithData(res, "Login Success.", userData);
             } else {
                 const user = new User({
-                    userName: req.body.userName,
-                    status: "New"
+                  email: data.email
                 });
                 user
                     .save()
@@ -70,6 +75,8 @@ import {
     },
   ];
   
+  
+
   export async function userLogout(req, res) {
     try {
       const errors = validationResult(req);
